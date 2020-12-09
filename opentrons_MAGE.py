@@ -26,8 +26,3 @@
 # Modules: Temperature
 # Inputs: electrocompetent cells with Ssr, stock solutions of the ssDNA mutagenic oligo, target temperature/other conditions as a user input
 # Outputs:
-
-# Step: Dilution for curation of plasmids (Optional)
-# Modules:
-# Inputs: 
-# Outputs:
