@@ -20,7 +20,7 @@
 # Inputs: Number of samples, annealed spacers
 # Outputs: 
     
-# Step: Hello
+# Step: 
 # Modules:
 # Inputs: 
 # Outputs:
