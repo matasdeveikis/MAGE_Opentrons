@@ -117,6 +117,11 @@ for i in range(1):
 # Step 2
 protocol.pause('Replace tips and add agarose plates')
 
+#p300.distribute(90, PBS, dilution_plate_1()[0:12], touch_tip=False, new_tip='once')
+
+
+
+
 #Insert 180ul of LB_Media(H1) from bacteria_media into each well of dilution_plate_1
 #p300.distribute(180, reservoir.wells('H1'), dilution_plate_1.columns()[0:12])
 
