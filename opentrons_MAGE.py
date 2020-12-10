@@ -1,32 +1,3 @@
-# Define reservoirs
-
-# Step: Amplification of SEVA CRISPR plasmid (Optional)
-# Modules: 
-# Inputs: Number of samples
-# Outputs: 
-
-# Step: Restriction digestion of SEVA CRISPR plasmids (Optional)
-# Modules:
-# Inputs: Number of samples, lysed and resuspended SEVA CRISPR E. coli
-# Outputs:    
-# Comments: Use magnetic bead purification instead of gel electrophoresis
-
-# Step: Annealing of spacer oligonucleotides
-# Modules: Thermocycler
-# Inputs: Number of samples, unique spacers
-# Outputs:
-# Comments: Ignore Step 1
-
-# Step: Insertion of spacers into the SEVA CRISPR plasmid
-# Modules: 
-# Inputs: Number of samples, annealed spacers
-# Outputs: 
-    
-# Step: ssDNA and CRISPR plasmid HEAT SHOCK (instead of electroporations)
-# Modules: Temperature
-# Inputs: electrocompetent cells with Ssr, stock solutions of the ssDNA mutagenic oligo, target temperature/other conditions as a user input
-# Outputs:
-
 #Import opentrons and run
 #import sys
 #!{sys.executable} -m pip install opentrons
@@ -39,8 +10,14 @@ protocol = simulate.get_protocol_api('2.8')
 #Labware
 # Assume that we start with a P. putida strain that has edd deleted and posseses both Cas9 and recombinase plasmids
 
-tiprack_20 = protocol.load_labware('opentrons_96_filtertiprack_20ul', 2)
-tiprack_200 = protocol.load_labware('opentrons_96_filtertiprack_200ul', 3)
+tiprack_20 = [
+        protocol.load_labware(
+            'opentrons_96_filtertiprack_20ul', str(s), '300ul Tips')
+        for s in [3]]
+tiprack_300 = [
+        protocol.load_labware(
+            'opentrons_96_tiprack_300ul', str(s), '300ul Tips')
+        for s in [2]]
 
 temp_hot = protocol.load_module('tempdeck', 4)                #For Heatshock
 hot_plate = temp_hot.load_labware('corning_96_wellplate_360ul_flat')
@@ -63,53 +40,66 @@ temp_cold.set_temperature(4)
 temp_hot.set_temperature(42)
 
 #pipettes
-p20 = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=[tiprack_20])
-p300 = protocol.load_instrument('p300_multi_gen2', 'right', tip_racks=[tiprack_200])
+p20 = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=tiprack_20)
+p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=tiprack_300)
 protocol.max_speeds['Z'] = 10
-Bacteria= bacteria_media.wells ('A1')
-Media= bacteria_media.wells ('A6')
+
+#Reagents
+Bacteria = bacteria_media.wells ('A1')
+Media = bacteria_media.wells ('A6')
+CRISPR_plasmid = reagents.wells ('A1') 
+CaCL_1M = reagents.wells ('A2') 
+PBS = reagents.wells ('A3')
+
 
 # Variables
 plasmid_conc = 20 * np.ones(1)
 oligos = 96
 growth_temp = 37
 
-def N_to_96(n):
-    dest = 'A' + str(n%12)
-    return dest
-
 #Add cells to each strip
-p300.distribute(50, bacteria_media.wells ('A1'), storage_oligos.columns()[0:12], touch_tip=False, new_tip='once')
+p300.distribute(50, Bacteria, storage_oligos.columns()[0:12], touch_tip=False, new_tip='once')
 
 #Add CRISPR plasmid to each of the PCR strip containing different oligos
 for i in range(1):
-    p20.distribute(50/float(plasmid_conc), reagents.wells ('A1'), storage_oligos.columns()[0:12], touch_tip=True, new_tip='always') # A1 is where the CRISPR plasmids are located on the tuberack
+    p20.distribute(50/float(plasmid_conc), CRISPR_plasmid, storage_oligos.columns()[0:12], touch_tip=True, new_tip='always') # A1 is where the CRISPR plasmids are located on the tuberack
 # Could we do touch_tip=False, new_tip='never' here to save on tips
+
+# To-do - electroporation option
 
 # Heat shock protocol - save tips from here?
 # Adding 100mM of CaCl
-p20.distribute(5, reagents.wells('A2'), cold_plate.columns()[0:12], touch_tip=True, new_tip='once')
+p20.distribute(5, CaCL_1M, cold_plate.columns()[0:12], touch_tip=True, new_tip='once')
 
-p300.pick_up_tip()   
-p300.transfer(45, storage_oligos.columns()[0:12], cold_plate.columns()[0:12], touch_tip=False, new_tip='never')
-p300.drop_tip()
+for i in range(0, 12):
+    p300.pick_up_tip()   
+    p300.transfer(45, storage_oligos.columns()[i], cold_plate.columns()[i], touch_tip=True, new_tip='never')
+    p300.return_tip()
+    
 protocol.delay(minutes = 15) 
 
-#p300.pick_up_tip()   
-#p300.transfer(45, cold_plate.columns()[0:12], hot_plate.columns()[0:12], touch_tip=False, new_tip='never')
-#p300.drop_tip()
+for i in range(0, 12):
+    p300.pick_up_tip()   
+    p300.transfer(45, cold_plate.columns()[i], hot_plate.columns()[i], touch_tip=True, new_tip='never')
+    p300.return_tip()
+    
 # need to figure out how long the operation takes to subtract from this
-#protocol.delay(seconds = 90) 
+protocol.delay(seconds = 90) 
 
-
-
+for i in range(0, 12):
+    p300.pick_up_tip()   
+    p300.transfer(45, hot_plate.columns()[i], cold_plate.columns()[i], touch_tip=True, new_tip='never')
+    p300.return_tip()
+    
+p300.distribute(270, Media, hot_plate.columns()[0:12], touch_tip=False, new_tip='once')
 temp_hot.set_temperature(growth_temp)
 protocol.delay(minutes = 5) 
-    
 
-
+for i in range(0, 12):
+    p300.pick_up_tip()   
+    p300.transfer(30, cold_plate.columns()[i], hot_plate.columns()[i], touch_tip=True, new_tip='never')
+    p300.return_tip()
 protocol.delay(minutes = 60)
-
 
 # Step 2
 protocol.pause('Replace tips and add agarose plates')
@@ -121,8 +111,14 @@ dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11) 
 
 protocol.resume()
 
+p300.distribute(270, PBS, dilution_plate_1.columns()[0:12], touch_tip=False, new_tip='once')
 
-#p300.distribute(90, PBS, dilution_plate_1()[0:12], touch_tip=False, new_tip='once')
+for i in range(0, 12):
+    p300.pick_up_tip()   
+    p300.transfer(30, hot_plate.columns()[i], dilution_plate_1.columns()[i], touch_tip=True, new_tip='never')
+    p300.return_tip()
+
+
 
 
 
