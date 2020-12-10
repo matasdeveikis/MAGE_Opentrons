@@ -73,7 +73,9 @@ oligos = 96
 growth_temp = 37
 
 def N_to_96(n):
+    
     dest = 'A' + str(n%12)
+    
     return dest
 
 #Add cells to each strip
@@ -89,36 +91,60 @@ for i in range(1):
 
 
 
-#Heat shock protocol - save tips from here?
+# Heat shock protocol - save tips from here?
+# Add 100mM of CaCl
 
-#p300.pick_up_tip()
-#for i in range(1, 11):
+
+# p300.pick_up_tip()
+# for i in range(1, 11):
 #    p300.aspirate(110, storage_oligos.wells(N_to_96(i)))
 #    p300.dispense(110, hot_plate.wells(N_to_96(i)))
-#p300.drop_tip()
+# p300.drop_tip()
 
 
-#for i in range(1, 11):
-#    p300.transfer(110, storage_oligos.wells(N_to_96(i)), hot_plate.wells(N_to_96(i)), touch_tip=False, new_tip='once')
+for i in range(1, 4):
+    p300.pick_up_tip()   
+    p300.transfer(110, storage_oligos.wells(N_to_96(i)), hot_plate.wells(N_to_96(i)), touch_tip=True, new_tip='never')
+#    p300.mix(5, 50)
+    p300.blow_out(hot_plate[N_to_96(i)])
+    p300.drop_tip()
 
 # need to figure out how long the operation takes to subtract from this
-#protocol.delay(seconds = 90) 
+protocol.delay(seconds = 90) 
+
+for i in range(1, 4):
+    p300.pick_up_tip()   
+    p300.transfer(110, hot_plate.wells(N_to_96(i)), cold_plate.wells(N_to_96(i)), touch_tip=True, new_tip='never')
+#    p300.mix(5, 50)
+    p300.blow_out(cold_plate[N_to_96(i)])
+    p300.drop_tip()
+
+temp_hot.set_temperature(growth_temp)
+protocol.delay(seconds = 300) 
+    
+
+#for i in range(1, 12):
+#    p300.pick_up_tip()   
+#    p300.transfer(110, cold_plate.wells(N_to_96(i)), hot_plate.wells(N_to_96(i)), touch_tip=True, new_tip='never')
+#    p300.mix(5, 50)
+#    p300.blow_out(hot_plate[N_to_96(i)])
+#    p300.drop_tip()
 
 #for i in range(1, 11):
 #    p300.transfer(110, hot_plate.wells(N_to_96(i)), cold_plate.wells(N_to_96(i)), mix_before=(2, 50), touch_tip=False, new_tip='once')
 
-#temp_hot.set_temperature(growth_temp)
-#protocol.delay(seconds = 300) 
-    
+
 #for i in range(1, 11):
 #    p300.transfer(110, cold_plate.wells(N_to_96(i)), hot_plate.wells(N_to_96(i)), mix_before=(2, 50), touch_tip=False, new_tip='once')
 #protocol.delay(minutes = 60)
 
 # Step 2
 protocol.pause('Replace tips and add agarose plates')
+#change modules 
+protocol.resume()
+
 
 #p300.distribute(90, PBS, dilution_plate_1()[0:12], touch_tip=False, new_tip='once')
-
 
 
 
@@ -132,6 +158,9 @@ protocol.pause('Replace tips and add agarose plates')
 #Take 20ul from dilution_plate_1 that is now in 1:10 dilution and place in dilution_plate_2 + MIX to get 1:100 dilution
 
 ##OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
+
+
+
 
 #PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
 
