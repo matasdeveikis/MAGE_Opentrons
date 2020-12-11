@@ -10,10 +10,18 @@ protocol = simulate.get_protocol_api('2.8')
 protocol.pause('Replace tips and add agarose plates')
 #change modules 
 dilution_plate_1 = protocol.load_labware('corning_96_wellplate_360ul_flat', 1)   #1:10 Dilution from Heatshock Output
+temp_hot = protocol.load_module('tempdeck', 4)                #For Heatshock
+hot_plate = temp_hot.load_labware('corning_96_wellplate_360ul_flat')
 solid_agar_glucose = protocol.load_labware('axygen_1_reservoir_90ml', 8)       #Solid Agar pre-made on the reservoir
 solid_agar_lupanine = protocol.load_labware('axygen_1_reservoir_90ml', 9)      #Solid Agar pre-made on the reservoir
+reagents = protocol.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', 10)
 dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11)   #1:100 Dilution from Heatshock Output
 #also hot_plate from step 1 in module 4 remains unchanged
+
+#Reagents
+CRISPR_plasmid = reagents.wells ('A1') 
+CaCL_1M = reagents.wells ('A2') 
+PBS = reagents.wells ('A3')
 
 #new pipette tips
 tiprack_300 = [
@@ -22,7 +30,7 @@ tiprack_300 = [
         for s in [2, 5]]
 
 #pipettes
-p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=[tiprack_300, tiprack_300_2])
+p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=tiprack_300)
 protocol.max_speeds['Z'] = 10
 
 protocol.resume()
