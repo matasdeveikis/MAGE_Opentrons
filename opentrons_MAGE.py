@@ -108,33 +108,34 @@ dilution_plate_1 = protocol.load_labware('corning_96_wellplate_360ul_flat', 1)  
 solid_agar_glucose = protocol.load_labware('axygen_1_reservoir_90ml', 8)       #Solid Agar pre-made on the reservoir
 solid_agar_lupanine = protocol.load_labware('axygen_1_reservoir_90ml', 9)      #Solid Agar pre-made on the reservoir
 dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11)   #1:100 Dilution from Heatshock Output
+#also hot_plate from step 1 in module 4 remains unchanged
+
+#new pipette tips
+tiprack_300 = protocol.load_labware('opentrons_96_tiprack_300ul', 2)
+tiprack_300_2 = protocol.load_labware('opentrons_96_tiprack_300ul', 5)
+
+#pipettes
+p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=[tiprack_300, tiprack_300_2])
+protocol.max_speeds['Z'] = 10
 
 protocol.resume()
 
-p300.distribute(270, PBS, dilution_plate_1.columns()[0:12], touch_tip=False, new_tip='once')
+#Add 270ul to dilution_plate_1 and dilution_plate_2 
+p300.distribute(270, PBS, dilution_plate_1.columns()[0:12], touch_tip=False, new_tip='always') 
+p300.distribute(270, PBS, dilution_plate_2.columns()[0:12], touch_tip=False, new_tip='always')
 
-for i in range(0, 12):
+for i in range(0, 96):
     p300.pick_up_tip()   
-    p300.transfer(30, hot_plate.columns()[i], dilution_plate_1.columns()[i], touch_tip=True, new_tip='never')
-    p300.return_tip()
+    p300.aspirate(30, hot_plate.wells()[i])           #Take heatshock cells
+    p300.dispense(30, dilution_plate_1.wells()[i])    #Put into dilution_plate_1
+    p300.mix(3,50, dilution_plate_1.wells()[i])       #Mix
+    p300.aspirate(30, dilution_plate_1.wells()[i])    #Take dilution_plate_1 cells
+    p300.dispense(30, dilution_plate_2.wells()[i])    #Put into dilution_plate_2
+    p300.mix(3,50, dilution_plate_2.wells()[i])       #Mix
+    p300.return_tip()                                 #Only 1 tip used per transfer between plates per well
 
-
-
-
-
-#Insert 180ul of LB_Media(H1) from bacteria_media into each well of dilution_plate_1
-#p300.distribute(180, reservoir.wells('H1'), dilution_plate_1.columns()[0:12])
-
-#Take 20ul from PCR_STRIP that has undergone heat shock and place in dilution_plate_1 + MIX
-
-#Insert 180ul of LB_Media(H1) from bacteria_media into each well of dilution_plate_2
-
-#Take 20ul from dilution_plate_1 that is now in 1:10 dilution and place in dilution_plate_2 + MIX to get 1:100 dilution
 
 ##OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
-
-
-
 
 #PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
 
