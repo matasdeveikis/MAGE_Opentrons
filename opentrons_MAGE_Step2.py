@@ -25,7 +25,7 @@ oligos = 96
 electroporation = False
 
 #Reagents
-CRISPR_plasmid = reagents.wells ('A1') 
+CRISPR_plasmid = reagents.wells ('A1')
 PBS = reagents.wells ('A2')
 if electroporation == False:
     CaCL_1M = reagents.wells ('A3')
@@ -106,6 +106,8 @@ for i in range(1, math.ceil(oligos/8)+1):
     # p20.blow_out()
 
     p20.drop_tip()
+
+# Trial desktop
 
 for line in protocol.commands(): 
         print(line)
