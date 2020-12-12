@@ -3,6 +3,7 @@
 #!{sys.executable} -m pip install opentrons
 
 import numpy as np
+import math
 from opentrons import simulate
 metadata = {'apiLevel': '2.8'}
 protocol = simulate.get_protocol_api('2.8')
@@ -42,7 +43,7 @@ temp_hot.set_temperature(42)
 
 #pipettes
 p20 = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=tiprack_20)
-p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=tiprack_300)
+p300 = protocol.load_instrument('p300_multi_gen2', 'right', tip_racks=tiprack_300)
 protocol.max_speeds['Z'] = 10
 
 #Reagents
@@ -57,61 +58,79 @@ PBS = reagents.wells ('A3')
 plasmid_conc = 20 * np.ones(1)
 oligos = 96
 growth_temp = 37
+electroporation = False
+
+def N_to_96(n): #Does not take inputs above 
+    if n<=12:
+        dest = 'A' + str(n%13)
+        return dest
+    else:
+        raise NameError('N_to_96 input is above 12')
+
+
 
 #Add cells to each strip
-p300.distribute(50, Bacteria, storage_oligos.columns()[0:12], touch_tip=False, new_tip='once')
+p300.distribute(50, Bacteria, storage_oligos.columns()[0:12], touch_tip = False, new_tip = 'once')
 
 #Add CRISPR plasmid to each of the PCR strip containing different oligos
 for i in range(1):
-    p20.distribute(50/float(plasmid_conc[i]), CRISPR_plasmid, storage_oligos.columns()[0:12], touch_tip=True, new_tip='always') # A1 is where the CRISPR plasmids are located on the tuberack
+    p20.distribute(50/float(plasmid_conc[i]), CRISPR_plasmid, storage_oligos.columns()[0:12], touch_tip = True, new_tip = 'always', mix_after = (3, 15)) # A1 is where the CRISPR plasmids are located on the tuberack
 # Could we do touch_tip=False, new_tip='never' here to save on tips
 
-# To-do - electroporation option
-
-# Heat shock protocol - save tips from here?
-# Adding 100mM of CaCl
-p20.distribute(5, CaCL_1M, cold_plate.columns()[0:12], touch_tip=True, new_tip='once')
-
-for i in range(0, 12):
-    p300.pick_up_tip()   
-    p300.transfer(45, storage_oligos.columns()[i], cold_plate.columns()[i], touch_tip=True, new_tip='never')
-    p300.return_tip()
+# Heat shock protocol
+if electroporation == False:
     
-protocol.delay(minutes = 15) 
-
-for i in range(0, 12):
-    p300.pick_up_tip()   
-    p300.transfer(45, cold_plate.columns()[i], hot_plate.columns()[i], touch_tip=True, new_tip='never')
-    p300.return_tip()
+    # Adding 100mM of CaCl
+    p20.distribute(5, CaCL_1M, cold_plate.columns()[0:12], touch_tip=True, new_tip='once')
     
-# need to figure out how long the operation takes to subtract from this
-protocol.delay(seconds = 90) 
-
-for i in range(0, 12):
-    p300.pick_up_tip()   
-    p300.transfer(45, hot_plate.columns()[i], cold_plate.columns()[i], touch_tip=True, new_tip='never')
-    p300.return_tip()
+    # Moving to cold plate for 15 minute incubation at 4 degrees C
+    for i in range(1, math.ceil(oligos/8)+1):
+        p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
+        p300.transfer(45, storage_oligos[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (2, ))
+        p300.return_tip(tiprack_300[1][N_to_96(i)])
+        # p300.aspirate(45, storage_oligos[N_to_96(i)])
+        # p300.mix(2, 25)
+        # p300.dispense(45, cold_plate[N_to_96(i)])
+        # p300.return_tip()
     
-p300.distribute(270, Media, hot_plate.columns()[0:12], touch_tip=False, new_tip='once')
-temp_hot.set_temperature(growth_temp)
-protocol.delay(minutes = 5) 
+    protocol.delay(minutes = 15) 
+    
+    # Moving to hot plate for heat shock at 42 degrees C
+    for i in range(1, math.ceil(oligos/8)+1):
+        p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
+        p300.transfer(45, cold_plate[N_to_96(i)], hot_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True)
+        p300.return_tip(tiprack_300[1][N_to_96(i)])
+        
+    # need to figure out how long the operation takes to subtract from this
+    protocol.delay(seconds = 90) 
+    
+    # Moving to hot plate for 5 minute incubation at 4 degrees C
+    for i in range(1, math.ceil(oligos/8)+1):
+        p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
+        p300.transfer(45, hot_plate[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True)
+        p300.return_tip(tiprack_300[1][N_to_96(i)])
+        
+    p300.distribute(270, Media, hot_plate.columns()[0:12], touch_tip=False, new_tip='once')
+    temp_hot.set_temperature(growth_temp)
+    protocol.delay(minutes = 5) 
+    
+    # Moving to hot plate for 5 minute incubation at selected temperature
+    for i in range(1, math.ceil(oligos/8)+1):
+        p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
+        p300.transfer(30, cold_plate[N_to_96(i)], hot_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (2, 150))
+        p300.return_tip(tiprack_300[1][N_to_96(i)])
+    protocol.delay(minutes = 60)
+    
+    # Moving to distribution plate 
+    
+    # for i in range(1, math.ceil(oligos/8)+1):
+    #     p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
+    #     p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = False, mix_after = (3, 15))
+    #     p300.return_tip(tiprack_300[1][N_to_96(i)])
 
-for i in range(0, 12):
-    p300.pick_up_tip()   
-    p300.transfer(30, cold_plate.columns()[i], hot_plate.columns()[i], touch_tip=True, new_tip='never')
-    p300.return_tip()
-protocol.delay(minutes = 60)
-
-#for i in range(0, 12):
-#    p300.pick_up_tip()   
-#    p300.transfer(30, hot_plate.columns()[i], dilution_plate_1.columns()[i], touch_tip=True, new_tip='never')
-#    p300.return_tip()
-
-##OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
-
-#PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
-
-#PLATING: Spot 10ul from dilution_plate_2 into solid_agar_lupanine
+# Electroporation protocol
+elif electroporation == True:
+    pass
 
 for line in protocol.commands(): 
         print(line)
