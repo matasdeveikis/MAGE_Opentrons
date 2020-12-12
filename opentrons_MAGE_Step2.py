@@ -2,6 +2,7 @@
 #import sys
 #!{sys.executable} -m pip install opentrons
 
+import math
 from opentrons import simulate
 metadata = {'apiLevel': '2.8'}
 protocol = simulate.get_protocol_api('2.8')
@@ -18,6 +19,9 @@ reagents = protocol.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', 1
 dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11)   #1:100 Dilution from Heatshock Output
 #also hot_plate from step 1 in module 4 remains unchanged
 
+# Variables
+oligos = 96
+
 #Reagents
 CRISPR_plasmid = reagents.wells ('A1') 
 CaCL_1M = reagents.wells ('A2') 
@@ -33,23 +37,30 @@ tiprack_300 = [
 p300 = protocol.load_instrument('p300_single_gen2', 'right', tip_racks=tiprack_300)
 protocol.max_speeds['Z'] = 10
 
-protocol.resume()
+def N_to_96(n): #Does not take inputs above 
+    if n<=12:
+        dest = 'A' + str(n%13)
+        return dest
+    else:
+        raise NameError('N_to_96 input is above 12')
+
 
 #Add 270ul to dilution_plate_1 and dilution_plate_2 
-p300.distribute(270, PBS, dilution_plate_1.columns()[0:12], touch_tip=False, new_tip='always') 
-p300.distribute(270, PBS, dilution_plate_2.columns()[0:12], touch_tip=False, new_tip='always')
+p300.distribute(270, PBS, dilution_plate_1.columns()[0:12] and dilution_plate_2.columns()[0:12], touch_tip=False, new_tip='once') 
 
-for i in range(0, 96):
-    p300.pick_up_tip()   
-    p300.aspirate(30, hot_plate.wells()[i])           #Take heatshock cells
-    p300.dispense(30, dilution_plate_1.wells()[i])    #Put into dilution_plate_1
-    p300.mix(3,50, dilution_plate_1.wells()[i])       #Mix
-    p300.aspirate(30, dilution_plate_1.wells()[i])    #Take dilution_plate_1 cells
-    p300.dispense(30, dilution_plate_2.wells()[i])    #Put into dilution_plate_2
-    p300.mix(3,50, dilution_plate_2.wells()[i])       #Mix
-    p300.return_tip()                                 #Only 1 tip used per transfer between plates per well
+for i in range(1, math.ceil(oligos/8)+1):
+    p300.pick_up_tip()
+    p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (3, 150))
+    p300.transfer(30, dilution_plate_1[N_to_96(i)], dilution_plate_2[N_to_96(i)], touch_tip = True, trash = True, new_tip = 'never', blow_out = True, mix_after = (3, 150))
+    # p300.aspirate(30, hot_plate.wells()[i])           #Take heatshock cells
+    # p300.dispense(30, dilution_plate_1.wells()[i])    #Put into dilution_plate_1
+    # p300.mix(3,50, dilution_plate_1.wells()[i])       #Mix
+    # p300.aspirate(30, dilution_plate_1.wells()[i])    #Take dilution_plate_1 cells
+    # p300.dispense(30, dilution_plate_2.wells()[i])    #Put into dilution_plate_2
+    # p300.mix(3,50, dilution_plate_2.wells()[i])       #Mix
+    p300.drop_tip()                                 #Only 1 tip used per transfer between plates per well
 
-##OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
+#OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
 
 #PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
 
