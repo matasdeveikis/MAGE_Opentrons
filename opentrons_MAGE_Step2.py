@@ -82,7 +82,7 @@ SAFE_HEIGHT = 15  # height avoids collision with agar tray.
 # Spot
 for i in range(1, math.ceil(oligos/8)+1):
     p20.pick_up_tip()
-    p20.aspirate(20, dilution_plate_2[N_to_96(i)])
+    p20.aspirate(10, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(SAFE_HEIGHT))
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(DISPENSING_HEIGHT))
     p20.dispense(volume=spot_vol, rate=spotting_dispense_rate)
@@ -90,6 +90,8 @@ for i in range(1, math.ceil(oligos/8)+1):
     #p20.move_to(solid_agar_glucose[N_to_96(i)].top(-1 * stabbing_depth))
     #robot.head_speed(combined_speed=max(DEFAULT_HEAD_SPEED.values()), **DEFAULT_HEAD_SPEED)
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(SAFE_HEIGHT))
+    
+    p20.aspirate(10, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(SAFE_HEIGHT))
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(DISPENSING_HEIGHT))
     p20.dispense(volume=spot_vol, rate=spotting_dispense_rate)
