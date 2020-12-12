@@ -46,19 +46,19 @@ p20 = protocol.load_instrument('p20_single_gen2', 'left', tip_racks=tiprack_20)
 p300 = protocol.load_instrument('p300_multi_gen2', 'right', tip_racks=tiprack_300)
 protocol.max_speeds['Z'] = 10
 
-#Reagents
-Bacteria = bacteria_media.wells ('A1')
-Media = bacteria_media.wells ('A6')
-CRISPR_plasmid = reagents.wells ('A1') 
-CaCL_1M = reagents.wells ('A2') 
-PBS = reagents.wells ('A3')
-
-
 # Variables
 plasmid_conc = 20 * np.ones(1)
 oligos = 96
 growth_temp = 37
 electroporation = False
+
+#Reagents
+Bacteria = bacteria_media.wells ('A1')
+Media = bacteria_media.wells ('A6')
+CRISPR_plasmid = reagents.wells ('A1') 
+if electroporation == False:
+    CaCL_1M = reagents.wells ('A2') 
+    PBS = reagents.wells ('A3')
 
 def N_to_96(n): #Does not take inputs above 
     if n<=12:
@@ -66,8 +66,6 @@ def N_to_96(n): #Does not take inputs above
         return dest
     else:
         raise NameError('N_to_96 input is above 12')
-
-
 
 #Add cells to each strip
 p300.distribute(50, Bacteria, storage_oligos.columns()[0:12], touch_tip = False, new_tip = 'once')
@@ -79,14 +77,13 @@ for i in range(1):
 
 # Heat shock protocol
 if electroporation == False:
-    
     # Adding 100mM of CaCl
     p20.distribute(5, CaCL_1M, cold_plate.columns()[0:12], touch_tip=True, new_tip='once')
     
     # Moving to cold plate for 15 minute incubation at 4 degrees C
     for i in range(1, math.ceil(oligos/8)+1):
         p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
-        p300.transfer(45, storage_oligos[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (2, ))
+        p300.transfer(45, storage_oligos[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (2, 25))
         p300.return_tip(tiprack_300[1][N_to_96(i)])
         # p300.aspirate(45, storage_oligos[N_to_96(i)])
         # p300.mix(2, 25)
@@ -121,8 +118,7 @@ if electroporation == False:
         p300.return_tip(tiprack_300[1][N_to_96(i)])
     protocol.delay(minutes = 60)
     
-    # Moving to distribution plate 
-    
+    # Moving to distribution plate
     # for i in range(1, math.ceil(oligos/8)+1):
     #     p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
     #     p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = False, mix_after = (3, 15))
