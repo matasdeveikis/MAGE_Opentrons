@@ -35,9 +35,6 @@ storage_oligos = protocol.load_labware('opentrons_96_aluminumblock_generic_pcr_s
 reagents = protocol.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', 10)
 
 
-# 384 well plate example
-# ot_384 = protocol.load_labware('corning_384_wellplate_112ul_flat', 10)
-
 temp_cold.set_temperature(4)
 temp_hot.set_temperature(42)
 
@@ -55,10 +52,10 @@ electroporation = False
 #Reagents
 Bacteria = bacteria_media.wells ('A1')
 Media = bacteria_media.wells ('A6')
-CRISPR_plasmid = reagents.wells ('A1') 
+CRISPR_plasmid = reagents.wells ('A1')
+PBS = reagents.wells ('A2')
 if electroporation == False:
-    CaCL_1M = reagents.wells ('A2') 
-    PBS = reagents.wells ('A3')
+    CaCL_1M = reagents.wells ('A3') 
 
 def N_to_96(n): #Does not take inputs above 
     if n<=12:

@@ -21,11 +21,13 @@ dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11) 
 
 # Variables
 oligos = 96
+electroporation = False
 
 #Reagents
 CRISPR_plasmid = reagents.wells ('A1') 
-CaCL_1M = reagents.wells ('A2') 
-PBS = reagents.wells ('A3')
+PBS = reagents.wells ('A2')
+if electroporation == False:
+    CaCL_1M = reagents.wells ('A3')
 
 #new pipette tips
 tiprack_300 = [
@@ -52,12 +54,6 @@ for i in range(1, math.ceil(oligos/8)+1):
     p300.pick_up_tip()
     p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (3, 150))
     p300.transfer(30, dilution_plate_1[N_to_96(i)], dilution_plate_2[N_to_96(i)], touch_tip = True, trash = True, new_tip = 'never', blow_out = True, mix_after = (3, 150))
-    # p300.aspirate(30, hot_plate.wells()[i])           #Take heatshock cells
-    # p300.dispense(30, dilution_plate_1.wells()[i])    #Put into dilution_plate_1
-    # p300.mix(3,50, dilution_plate_1.wells()[i])       #Mix
-    # p300.aspirate(30, dilution_plate_1.wells()[i])    #Take dilution_plate_1 cells
-    # p300.dispense(30, dilution_plate_2.wells()[i])    #Put into dilution_plate_2
-    # p300.mix(3,50, dilution_plate_2.wells()[i])       #Mix
     p300.drop_tip()                                 #Only 1 tip used per transfer between plates per well
 
 #OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
