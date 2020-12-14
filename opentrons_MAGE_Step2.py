@@ -70,10 +70,11 @@ for i in range(1, math.ceil(oligos/8)+1):
     p300.transfer(30, dilution_plate_1[N_to_96(i)], dilution_plate_2[N_to_96(i)], touch_tip = True, trash = True, new_tip = 'never', blow_out = True, mix_after = (3, 150))
     p300.drop_tip()                                 #Only 1 tip used per transfer between plates per well
 
-# OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
+#OUTPUT: in dilution_plate_2 in each well, we have bacterial cells in 1:100 dilution with different oligos
 
-# PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
-# PLATING: Spot 10ul from dilution_plate_2 into solid_agar_lupanine
+
+#PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
+#PLATING: Spot 10ul from dilution_plate_2 into solid_agar_lupanine
 # Spoting constants:  
 
 spot_vol=10

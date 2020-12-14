@@ -40,9 +40,10 @@ p300 = protocol.load_instrument('p300_multi_gen2', 'right', tip_racks=tiprack_30
 protocol.max_speeds['Z'] = 10
 
 # Variables
-plasmid_conc = 20 * np.ones(1)
+plasmid_conc = 20 * np.ones(1) # In ng/uL
 oligos = 96
 growth_temp = 37
+delay_per_column = 5 # in seconds, needs to be experimentally determined (5s is assumed for now)
 electroporation = False
 
 #Reagents
@@ -80,7 +81,7 @@ if electroporation == False:
         p300.transfer(45, storage_oligos[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, new_tip = 'never', blow_out = True, mix_after = (2, 25))
         p300.return_tip(tiprack_300[1][N_to_96(i)])
     
-    protocol.delay(minutes = 15) 
+    protocol.delay(seconds = 15 * 60 - (math.ceil(oligos/8)*delay_per_column)) 
     
     # Moving to hot plate for heat shock at 42 degrees C
     for i in range(1, math.ceil(oligos/8)+1):
@@ -89,7 +90,7 @@ if electroporation == False:
         p300.return_tip(tiprack_300[1][N_to_96(i)])
         
     # need to figure out how long the operation takes to subtract from this
-    protocol.delay(seconds = 90) 
+    protocol.delay(seconds = 90 - (math.ceil(oligos/8)*delay_per_column))  
     
     # Moving to hot plate for 5 minute incubation at 4 degrees C
     for i in range(1, math.ceil(oligos/8)+1):
@@ -106,7 +107,7 @@ if electroporation == False:
     p300.drop_tip()
     
     temp_hot.set_temperature(growth_temp)
-    protocol.delay(minutes = 5) 
+    protocol.delay(seconds = 5 * 60 - (math.ceil(oligos/8)*delay_per_column)) 
     
     # Moving to hot plate for 60 minute incubation at selected temperature
     for i in range(1, math.ceil(oligos/8)+1):
@@ -115,7 +116,7 @@ if electroporation == False:
         p300.return_tip(tiprack_300[1][N_to_96(i)])
     
     temp_cold.deactivate()
-    protocol.delay(minutes = 60)
+    protocol.delay(seconds = 60 * 60 - (math.ceil(oligos/8)*delay_per_column))
     temp_hot.deactivate()
     
     # Moving to distribution plate
