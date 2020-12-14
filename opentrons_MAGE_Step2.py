@@ -39,7 +39,7 @@ tiprack_300 = [
 tiprack_20 = [
         protocol.load_labware(
             'opentrons_96_filtertiprack_20ul', str(s), '300ul Tips')
-        for s in [3]]
+        for s in [3, 6]]
 
 #pipettes
 p300 = protocol.load_instrument('p300_multi_gen2', 'right', tip_racks=tiprack_300)
@@ -71,40 +71,53 @@ for i in range(1, math.ceil(oligos/8)+1):
 ## Spoting constants:  
 
 spot_vol=10
-#dead_vol=2
+dead_vol=2
 spotting_dispense_rate=0.025
 stabbing_depth=2
-#DEFAULT_HEAD_SPEED = {'x': 400, 'y': 400,'z': 125, 'a': 125}
-#SPOT_HEAD_SPEED = {'x': 400, 'y': 400, 'z': 125,'a': 125 // 4}
 DISPENSING_HEIGHT = 5
 SAFE_HEIGHT = 15  # height avoids collision with agar tray.
 
 # Spot
 for i in range(1, math.ceil(oligos/8)+1):
     p20.pick_up_tip()
-    p20.aspirate(10, dilution_plate_2[N_to_96(i)])
+    p20.aspirate(10 + dead_vol, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(SAFE_HEIGHT))
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(DISPENSING_HEIGHT))
     p20.dispense(volume=spot_vol, rate=spotting_dispense_rate)
-    #robot.head_speed(combined_speed=max(SPOT_HEAD_SPEED.values()), **SPOT_HEAD_SPEED)
-    #p20.move_to(solid_agar_glucose[N_to_96(i)].top(-1 * stabbing_depth))
-    #robot.head_speed(combined_speed=max(DEFAULT_HEAD_SPEED.values()), **DEFAULT_HEAD_SPEED)
+
+    # Stabbing Gel 
+    protocol.max_speeds['Z'] = 125 // 4  # Reduce speed of descent 
+    protocol.max_speeds['A'] = 125 // 4  # Reduce speed of descent 
+    p20.move_to(solid_agar_glucose[N_to_96(i)].top(-1 * stabbing_depth))
+    protocol.max_speeds['Z'] = 125  # Going back to default speed
+    protocol.max_speeds['A'] = 125  # Going back to default speed
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(SAFE_HEIGHT))
+
+    # Dispose of dead volume and tip
+    # p20.dispense(dead_vol, spotting_waste) 
+    # p20.blow_out()
+    p20.drop_tip()
     
-    p20.aspirate(10, dilution_plate_2[N_to_96(i)])
+
+for i in range(1, math.ceil(oligos/8)+1):
+    p20.pick_up_tip()
+    p20.aspirate(10 + dead_vol, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(SAFE_HEIGHT))
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(DISPENSING_HEIGHT))
     p20.dispense(volume=spot_vol, rate=spotting_dispense_rate)
-    #robot.head_speed(combined_speed=max(SPOT_HEAD_SPEED.values()), **SPOT_HEAD_SPEED)
-    #p20.move_to(solid_agar_lupanine[N_to_96(i)].top(-1 * stabbing_depth))
-    #robot.head_speed(combined_speed=max(DEFAULT_HEAD_SPEED.values()), **DEFAULT_HEAD_SPEED)
+
+    # Stabbing Gel 
+    protocol.max_speeds['Z'] = 125 // 4  # Reduce speed of descent 
+    protocol.max_speeds['A'] = 125 // 4  # Reduce speed of descent 
+    p20.move_to(solid_agar_lupanine[N_to_96(i)].top(-1 * stabbing_depth))
+    protocol.max_speeds['Z'] = 125  # Going back to default speed
+    protocol.max_speeds['A'] = 125  # Going back to default speed
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(SAFE_HEIGHT))
 
 
     # Dispose of dead volume and tip
-    # p20.dispense(dead_vol, spotting_waste)
+    # p20.dispense(dead_vol, spotting_waste) 
     # p20.blow_out()
-
     p20.drop_tip()
 
 # Trial desktop
