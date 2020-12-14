@@ -14,9 +14,9 @@ protocol.pause('Replace tips and add agarose plates')
 dilution_plate_1 = protocol.load_labware('corning_96_wellplate_360ul_flat', 1)   #1:10 Dilution from Heatshock Output
 temp_hot = protocol.load_module('tempdeck', 4)                #For Heatshock
 hot_plate = temp_hot.load_labware('corning_96_wellplate_360ul_flat')
+reservoir15 = protocol.load_labware('nest_12_reservoir_15ml', 5)      #Bacterial Culture(A1), LB_Media(A6) and PBS
 solid_agar_glucose = protocol.load_labware('corning_96_wellplate_360ul_flat', 8)       #Solid Agar pre-made on the reservoir
 solid_agar_lupanine = protocol.load_labware('corning_96_wellplate_360ul_flat', 9)      #Solid Agar pre-made on the reservoir
-reagents = protocol.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', 10)
 dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 11)   #1:100 Dilution from Heatshock Output
 #also hot_plate from step 1 in module 4 remains unchanged
 
@@ -25,16 +25,15 @@ oligos = 96
 electroporation = False
 
 #Reagents
-CRISPR_plasmid = reagents.wells ('A1')
-PBS = reagents.wells ('A2')
-if electroporation == False:
-    CaCL_1M = reagents.wells ('A3')
+Bacteria = reservoir15.wells ('A1')
+Media = reservoir15.wells ('A6')
+PBS = reservoir15.wells ('A7', 'A8', 'A9', 'A10', 'A11', 'A12')
 
 #new pipette tips
 tiprack_300 = [
         protocol.load_labware(
             'opentrons_96_tiprack_300ul', str(s), '300ul Tips')
-        for s in [2, 5]]
+        for s in [2, 3]]
 
 tiprack_20 = [
         protocol.load_labware(
@@ -55,8 +54,16 @@ def N_to_96(n): #Does not take inputs above
 
 
 #Add 270ul to dilution_plate_1 and dilution_plate_2 
-p300.distribute(270, PBS, dilution_plate_1.columns()[0:12] and dilution_plate_2.columns()[0:12], touch_tip=False, new_tip='once') 
-
+    p300.pick_up_tip()
+    for i in range(1, math.ceil(oligos/8)+1):
+        if i <= 6:
+            p300.transfer(270, PBS[2], dilution_plate_1[N_to_96(i)], touch_tip=False, new_tip='never')
+            p300.transfer(270, PBS[3], dilution_plate_2[N_to_96(i)], touch_tip=False, new_tip='never')
+        else:
+            p300.transfer(270, PBS[4], dilution_plate_1[N_to_96(i)], touch_tip=False, new_tip='never')
+            p300.transfer(270, PBS[5], dilution_plate_2[N_to_96(i)], touch_tip=False, new_tip='never')
+    p300.drop_tip()
+    
 for i in range(1, math.ceil(oligos/8)+1):
     p300.pick_up_tip()
     p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (3, 150))
@@ -68,7 +75,7 @@ for i in range(1, math.ceil(oligos/8)+1):
 
 #PLATING: Spot 10ul from dilution_plate_2 into solid_agar_glucose
 #PLATING: Spot 10ul from dilution_plate_2 into solid_agar_lupanine
-## Spoting constants:  
+# Spoting constants:  
 
 spot_vol=10
 dead_vol=2
