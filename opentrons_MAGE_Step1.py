@@ -3,6 +3,8 @@
 # !{sys.executable} -m pip install csv
 # !{sys.executable} -m pip install mpu
 
+# Step 1 for the automated CRISPR MAGE protocol
+
 import csv
 import mpu.string
 import math
