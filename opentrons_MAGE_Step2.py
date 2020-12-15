@@ -1,11 +1,28 @@
-# import opentrons and run
 # import sys
 # !{sys.executable} -m pip install opentrons
+# !{sys.executable} -m pip install csv
+# !{sys.executable} -m pip install mpu
 
+import csv
+import mpu.string
 import math
 from opentrons import simulate
 metadata = {'apiLevel': '2.8'}
 protocol = simulate.get_protocol_api('2.8')
+
+# Variables
+plasmid_conc, oligos, growth_temp, electroporation = [[], [], [], []] # Initialising variables. This is not required but will avoid the annoying 'Undefined variable' notes in text editors 
+with open('variables.csv', newline = '') as variables_csv:
+    reader = csv.reader(variables_csv, delimiter=',')
+    line_count = 0
+    for row in reader:
+        if line_count == 0:
+            line_count += 1
+        elif str(row[0]) == 'electroporation':
+            electroporation = mpu.string.str2bool(row[1])
+            line_count += 1
+        else:
+            exec("%s = %d" % (str(row[0]), float(row[1])))
 
 # Step 2
 protocol.pause('Replace tips and add agarose plates')
@@ -13,8 +30,11 @@ protocol.pause('Replace tips and add agarose plates')
 dilution_plate_1 = protocol.load_labware('corning_96_wellplate_360ul_flat', 1)   # 1:10 Dilution from Heatshock Output
 dilution_plate_2 = protocol.load_labware('corning_96_wellplate_360ul_flat', 4)   # 1:100 Dilution from Heatshock Output
 reservoir15 = protocol.load_labware('nest_12_reservoir_15ml', 5)      # Bacterial Culture(A1), LB_Media(A6) and PBS
-temp_hot = protocol.load_module('tempdeck', 6)                # Heated plate from step 1 in module 6 remains unchanged
-hot_plate = temp_hot.load_labware('corning_96_wellplate_360ul_flat')
+if electroporation == False:
+    temp_hot = protocol.load_module('tempdeck', 6)                # Heated plate from step 1 in module 6 remains unchanged
+    hot_plate = temp_hot.load_labware('corning_96_wellplate_360ul_flat')
+else:
+    hot_plate = protocol.load_labware('corning_96_wellplate_360ul_flat', 6) # no heat block in case of electroporation
 solid_agar_glucose = protocol.load_labware('corning_96_wellplate_360ul_flat', 10)       # Solid Agar pre-made on the reservoir
 solid_agar_lupanine = protocol.load_labware('corning_96_wellplate_360ul_flat', 11)      # Solid Agar pre-made on the reservoir
 
@@ -30,9 +50,7 @@ tiprack_20 = [
         for s in [7, 8]]
 
 
-# Variables
-oligos = input("Input number of mutagenic oligos to be used: ")
-electroporation = False
+
 
 # Reagents
 Bacteria = reservoir15.wells ('A1')
@@ -54,7 +72,7 @@ def N_to_96(n): #Does not take inputs above
 
 # Add 270ul to dilution_plate_1 and dilution_plate_2 
     p300.pick_up_tip()
-    for i in range(1, math.ceil(float(oligos)/8)+1):
+    for i in range(1, math.ceil(oligos/8)+1):
         if i <= 6:
             p300.transfer(270, PBS[2], dilution_plate_1[N_to_96(i)], touch_tip=False, new_tip='never')
             p300.transfer(270, PBS[3], dilution_plate_2[N_to_96(i)], touch_tip=False, new_tip='never')
@@ -63,7 +81,7 @@ def N_to_96(n): #Does not take inputs above
             p300.transfer(270, PBS[5], dilution_plate_2[N_to_96(i)], touch_tip=False, new_tip='never')
     p300.drop_tip()
     
-for i in range(1, math.ceil(float(oligos)/8)+1):
+for i in range(1, math.ceil(oligos/8)+1):
     p300.pick_up_tip()
     p300.transfer(30, hot_plate[N_to_96(i)], dilution_plate_1[N_to_96(i)], touch_tip = True, trash = False, new_tip = 'never', blow_out = True, mix_after = (3, 150))
     p300.transfer(30, dilution_plate_1[N_to_96(i)], dilution_plate_2[N_to_96(i)], touch_tip = True, trash = True, new_tip = 'never', blow_out = True, mix_after = (3, 150))
@@ -78,7 +96,7 @@ DISPENSING_HEIGHT = 5
 SAFE_HEIGHT = 15  # height avoids collision with agar tray.
 
 # Spot
-for i in range(1, math.ceil(float(oligos)/8)+1):
+for i in range(1, math.ceil(oligos/8)+1):
     p20.pick_up_tip()
     p20.aspirate(10 + dead_vol, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_glucose[N_to_96(i)].top(SAFE_HEIGHT))
@@ -99,7 +117,7 @@ for i in range(1, math.ceil(float(oligos)/8)+1):
     p20.drop_tip()
     
 
-for i in range(1, math.ceil(float(oligos)/8)+1):
+for i in range(1, math.ceil(oligos/8)+1):
     p20.pick_up_tip()
     p20.aspirate(10 + dead_vol, dilution_plate_2[N_to_96(i)])
     p20.move_to(solid_agar_lupanine[N_to_96(i)].top(SAFE_HEIGHT))
