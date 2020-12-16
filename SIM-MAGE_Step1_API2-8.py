@@ -100,7 +100,7 @@ if electroporation == False:
         
     protocol.delay(seconds = 90 - (math.ceil(oligos/8)*delay_per_column))  
     
-    # Moving to hot plate for 5 minute incubation at 4 degrees C
+    # Moving to cold plate for 5 minute incubation at 4 degrees C
     for i in range(1, math.ceil(oligos/8)+1):
         p300.pick_up_tip(tiprack_300[1][N_to_96(i)])
         p300.transfer(45, hot_plate[N_to_96(i)], cold_plate[N_to_96(i)], touch_tip = True, new_tip = 'never', blow_out = True)
@@ -133,3 +133,4 @@ elif electroporation == 1:
 
 for line in protocol.commands(): 
         print(line)
+        
